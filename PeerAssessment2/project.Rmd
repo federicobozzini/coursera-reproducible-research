@@ -1,0 +1,96 @@
+---
+title: "Weather Events damages: a study"
+output: 
+        html_document:
+        keep_md: true
+---
+  
+  
+##Synopsis
+
+In this document we are going to analyse the negative outcomes of a great variety of weather events in the USA. In particular we will focus our analysis on the conseguences for the population and on the economical damages. We are going to read the data and aggregate them in a relevant way for our analysis. Then we are going to show which ones are the worst.
+        
+##Data Processing
+### Setup
+        
+First we set the locale to english
+```{r, results='hide'}
+Sys.setlocale("LC_TIME", "C")
+```
+
+then we load and cache the data
+
+```{r, cache=TRUE}
+stormdataRaw <- read.csv(bzfile("./StormData.csv.bz2"), stringsAsFactors=FALSE)
+```
+
+We take only the essential subset of the field of the raw data to reduce the memory footprint
+
+```{r, cache=TRUE}
+relevantFields <- c("EVTYPE", "FATALITIES", "INJURIES", "PROPDMGEXP", "CROPDMG", "CROPDMGEXP", "PROPDMG")
+stormdata <- stormdataRaw[relevantFields]
+remove(stormdataRaw)
+
+stormdata$EVTYPE <- tolower(stormdata$EVTYPE)
+```
+
+###Whats more dangerous for the people
+
+First of all we calculate how many fatalities and injuries every events produce on average:
+
+```{r, results='hide', cache=TRUE}
+fatalitiesMean <- aggregate(stormdata$FATALITIES, by=list(type=stormdata$EVTYPE), FUN=mean)
+injuriesMean <- aggregate(stormdata$INJURIES, by=list(type=stormdata$EVTYPE), FUN=mean)
+```
+
+A brief summary of the most life-threatening events:
+
+```{r, cache=TRUE}
+deadliestEvents <- head(fatalitiesMean[order(fatalitiesMean$x, decreasing=T), c("type", "x")], 5)
+```
+
+How many deaths on average?
+```{r, fig.width=8, fig.height=4, message=FALSE, fig.align='center' }
+plot(x= factor(deadliestEvents$type), y=deadliestEvents$x, xlab="Event", ylab="Deaths", main="", cex.lab=0.4, cex.axis=0.4, cex.main=0.4, cex.sub=0.4, xpd=TRUE, srt=45)
+```
+
+and a summary of the injuries produced:
+
+```{r, cache=TRUE}
+head(fatalitiesMean[order(fatalitiesMean$x, decreasing=T), c("type", "x")], 5)
+```
+
+**The most dangerous event appears to be the the class of events labeled "Tornadoes, Tstm wind and Hail"**
+
+###What is the most expensive type of event?
+
+We calculate the economic damage per event.
+```{r, cache=TRUE}
+stormdata$damage <- stormdata$PROPDMG * ifelse(stormdata$PROPDMGEXP == "m", 1e+06, 1e+03)
+stormdata$damage <- stormdata$damage + stormdata$CROPDMG * ifelse(stormdata$CROPDMGEXP == "m", 1e+06, 1e+03)
+```
+
+We calculate the average damage.
+```{r, results='hide', cache=TRUE}
+costMean <- aggregate(stormdata$damage, by=list(type=stormdata$EVTYPE), FUN=mean)
+```
+
+```{r, cache=TRUE}
+mostExpensive <- head(costMean[order(costMean, decreasing=T), c("type", "x")], 5)
+```
+
+What are the most expensive type of events:
+```{r, fig.width=8, fig.height=4, message=FALSE, fig.align='center' }
+plot(x= factor(mostExpensive$type), y=mostExpensive$x, xlab="Event", ylab="cost", main="", cex.lab=0.4, cex.axis=0.4, cex.main=0.4, cex.sub=0.4, xpd=TRUE, srt=45)
+```
+
+**On average the most expensive events are the ones labeled "Wrintry Mix".**
+
+##Results
+As noted above, the worst events (on average) regarding human safety are the ones labeled as "Tornadoes, Tstm wind and Hail".
+
+The worst events (on average) from an economic point of view are the ones labeled "Wrintry Mix".
+
+##Reference
+
+The original dataset is offered by http://www.ncdc.noaa.gov/stormevents/.
