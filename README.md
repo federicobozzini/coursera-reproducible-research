@@ -1,2 +1,2 @@
 # coursera-reproducible-research
-Material for the Reproducible Research course on coursera.
+Material for the [Reproducible Research course](https://www.coursera.org/learn/reproducible-research) on coursera.
